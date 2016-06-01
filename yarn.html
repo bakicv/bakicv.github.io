@@ -1,0 +1,80 @@
+<html>
+<head>
+    <title></title>
+</head>
+
+<body>
+<video class="video"></video>
+
+<script>
+ function downloadData(url, cb) {
+    console.log("Downloading " + url);
+
+    var xhr = new XMLHttpRequest;
+    xhr.open('get', url);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function () {
+        cb(new Uint8Array(xhr.response));
+    };
+    xhr.send();
+}
+
+if (MediaSource.isTypeSupported('video/mp4; codecs="avc1.64001E"')) {
+    console.log("mp4 codec supported");
+}
+
+var videoSources = [
+    "{% static 'https://storage.googleapis.com/vidsums/50057807-9ae2-44dc-9b80-0fe7efa9d53b.mp4' %}",
+    "{% static 'https://storage.googleapis.com/vidsums/413c8572-f239-4dea-a0c7-08679b0d4f91.mp4' %}"
+]
+
+var mediaSource = new MediaSource();
+
+
+mediaSource.addEventListener('sourceopen', function(e) {
+
+
+    var sourceBuffer = mediaSource.addSourceBuffer('video/mp4; codecs="avc1.64001E"');
+    sourceBuffer.mode = 'sequence';
+
+    console.log('SourceBuffer mode set to ' + sourceBuffer.mode);
+
+    sourceBuffer.addEventListener('updateend', function(e) {
+        console.log('Finished updating buffer');
+        console.log('New duration is ' + String(mediaSource.duration));
+
+        if (videoSources.length == 0) {
+            mediaSource.endOfStream();
+            video.currentTime = 0;
+            video.play();
+            return;
+        }
+
+        downloadData(videoSources.pop(), function(arrayBuffer) {
+            console.log('Finished downloading buffer of size ' + String(arrayBuffer.length));
+            console.log('Updating buffer');
+            sourceBuffer.appendBuffer(arrayBuffer);
+        });
+
+        console.log('New duration: ' + String(mediaSource.duration));
+
+    });
+
+    downloadData(videoSources.pop(), function(arrayBuffer) {
+        console.log('Finished downloading buffer of size ' + String(arrayBuffer.length));
+        console.log('Updating buffer');
+        sourceBuffer.appendBuffer(arrayBuffer);
+    });
+
+
+
+}, false);
+
+var video = document.querySelector('video');
+video.src = window.URL.createObjectURL(mediaSource);
+
+</script>
+
+</body>
+
+</html>

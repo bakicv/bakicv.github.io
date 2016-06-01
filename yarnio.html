@@ -1,0 +1,126 @@
+<html>
+<head>
+<title></title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+<script>
+	
+var urlParams;
+(window.onpopstate = function () {
+    var match,
+        pl     = /\+/g,  // Regex for replacing addition symbol with a space
+        search = /([^&=]+)=?([^&]*)/g,
+        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+        query  = window.location.search.substring(1);
+
+    urlParams = {};
+    while (match = search.exec(query)){
+        key = decode(match[1]);
+        val = decode(match[2]);
+        if (key.indexOf('[]') != -1){
+        	if (urlParams[key] ===  undefined ){
+        		urlParams[key] = [val]	
+        	}
+        	else{
+        		urlParams[key].push(val)
+        	}
+        }
+        else{
+        	urlParams[key] = val;	
+        }
+        
+    	}
+})();
+
+current_video = 0;
+videos = [];
+
+$(document).ready(function(){
+    console.log(urlParams);
+
+    var onEnd = function(){
+    	videos[current_video].hide();
+    	videos[current_video].get(0).removeEventListener('ended', onEnd)
+		current_video++;
+		if (videos[current_video] !== undefined){
+			videos[current_video].show()
+			videos[current_video].get(0).play();
+			videos[current_video].get(0).addEventListener('ended', onEnd, false);
+			}
+		else{
+			videos[0].show()
+			}
+    }
+
+    var updateUrl = function(){
+    	var ids = $.map($('#yarns li'), function(li){
+	    	var string = $(li).text();
+	    	return string.substring(string.lastIndexOf("/") + 1)
+	    	})
+    	if (ids.length)
+	    	$('#yarnlist').val('http://bakicv.github.io/yarnio.html?videos[]='+ids.join('&videos[]='))
+    }
+
+    if (urlParams['videos[]']){
+    	for (i=0; i<urlParams['videos[]'].length; i++){
+    		url = 'https://storage.googleapis.com/vidsums/'+urlParams['videos[]'][i]+'.mp4'
+    		page = 'https://getyarn.io/yarn-clip/'+urlParams['videos[]'][i]
+    		$('#yarns').append($('<li>', {text:page}))
+    		video = $('<video />', {'src':url, type:'video/mp4', controls:false})
+    		video_obj = video.get(0)
+    		videos.push(video)
+    		video_obj.load();
+    		video_obj.addEventListener('ended', onEnd, false);
+			video.hide();
+    		$('body').append(video);
+    		//videos.push(url);
+    	}
+
+		videos[0].show();
+    	$('#yarns').val('https://getyarn.io/yarn-clip/'+urlParams['videos[]'].join('\r\nhttps://getyarn.io/yarn-clip/'))
+    }
+    var play = $('<button>', {'text':'Unroll the yarn!'}).click(function(){
+    	videos[0].get(0).play()
+    })
+    $('body').append(play);
+
+	$('#yarns').sortable()
+    $('body').on('paste', function(e){
+    	e.preventDefault();
+	    var text = (e.originalEvent || e).clipboardData.getData('text/plain') || '';
+	    var options = $.map($('#yarns li'), function(li){
+	    	return $(li).text()
+	    	})
+	    console.log(options)
+	    console.log(options[text])
+	    //if (options.indexOf(text) == -1)
+	    if (text.indexOf('getyarn.io/yarn-clip') != -1)
+	    	$('#yarns').append($('<li>', {text:text}))
+
+		updateUrl()
+    })
+
+	updateUrl()
+});
+
+</script>
+
+<style>
+	
+textarea {
+    width: 800px;
+    height: 150px;
+	}
+
+</style>
+</head>
+<body>
+
+<ul id="yarns">
+
+</ul>
+<br>
+<input id="yarnlist" />
+<br>
+</body>
+</html>

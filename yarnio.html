@@ -6,6 +6,9 @@
 <script>
 	
 var urlParams;
+var current_video = 0;
+var videos = [];
+
 (window.onpopstate = function () {
     var match,
         pl     = /\+/g,  // Regex for replacing addition symbol with a space
@@ -32,22 +35,20 @@ var urlParams;
     	}
 })();
 
-current_video = 0;
-videos = [];
-
-$(document).ready(function(){
-
-	// init url yarns
-    if (urlParams['videos[]']){
-    	for (i=0; i<urlParams['videos[]'].length; i++){
-    		page = 'https://getyarn.io/yarn-clip/'+urlParams['videos[]'][i]
-    		$('#yarns').append($('<li>', {text:page, 'data-id':urlParams['videos[]'][i]}))
-    	}
+	var addYarn = function(id){
+			page = 'https://getyarn.io/yarn-clip/'+id
+    		var li = $('<li>', {text:page, 'data-id':id})
+    		var remove = $('<span>', {'text':'remove', 'class':'remove'}).click(function(){
+    			$(this).parent().remove();
+    			processVideos();
+    		})
+    		$(li).append(remove)
+    		$('#yarns').append(li)
     }
 
     var onEnd = function(){
-    	console.log('ended')
     	videos[current_video].hide();
+    	videos[current_video].get(0).currentTime = 0;
 		current_video++;
 		if (videos[current_video] !== undefined){
 			videos[current_video].show()
@@ -67,6 +68,8 @@ $(document).ready(function(){
 
     	if (ids.length)
 	    	$('#yarnlist').val('http://bakicv.github.io/yarnio.html?videos[]='+ids.join('&videos[]='))
+
+	    window.history.pushState('Object', 'Title', '/yarnio.html?videos[]='+ids.join('&videos[]='));
     }
 
     var processVideos = function(){
@@ -94,13 +97,19 @@ $(document).ready(function(){
 
 	    	if (videos.length)
 				videos[0].show();
+
+			updateUrl()
 	    }
 	var init =function(){
 	    var play = $('#unroll').click(function(){
 	    	videos[0].get(0).play()
 	    	})
 
-		$('#yarns').sortable()
+		$('#yarns').sortable({
+			stop: function( event, ui ) {
+				processVideos()
+			}
+		})
 
 	    $('body').on('paste', function(e){
 	    	e.preventDefault();
@@ -111,16 +120,27 @@ $(document).ready(function(){
 		    //if (options.indexOf(text) == -1)
 		    if (text.indexOf('getyarn.io/yarn-clip') != -1){
 		    	var id = text.substring(text.lastIndexOf('/')+1)
-		    	$('#yarns').append($('<li>', {text:text, 'data-id':id}))
+		    	addYarn(id)
 		    	}
 
-			updateUrl()
 			processVideos()
 	    })
 
-		updateUrl()
 		processVideos()
 		}
+
+
+$(document).ready(function(){
+
+	// init url yarns
+    if (urlParams['videos[]']){
+    	for (i=0; i<urlParams['videos[]'].length; i++){
+    		addYarn(urlParams['videos[]'][i])
+    		
+    	}
+    }
+
+    
 
 	init()
 });
@@ -128,44 +148,92 @@ $(document).ready(function(){
 </script>
 
 <style>
-	
+
+html, body{
+	width:100%;
+	height:100%;
+	padding:0;
+	margin:0;
+	background-color:#333;
+	color:#ccc;
+	font-family: Arial;
+}	
+input{
+
+	background-color:#333;
+	color:#ccc;
+}
 textarea {
     width: 800px;
     height: 150px;
 	}
-
 #yarns {
 	padding:0;
 	margin:0;
 }
 #yarns li{
-	font-family: Arial;
-	width:800;
-	border:1px solid gray;
-	list-style: none;
 	padding:0;
 	margin:0;
+	display:block;
+	font-family: Arial;
+	width:853;
+	background-color:#222;
+	padding:5px;
+	border-radius:6px;
+	list-style: none;
 	margin-bottom:2px;
 }
 #yarnlist{
-	width:800px;
-	border:1px solid blue;
+	width:853px;
+	border:1px solid #fff;
+	padding:5px;
+	border-radius:6px;
+
 }
+video{
+	width:853px;
+}
+.remove{
+	float:right;
+}
+
+#holder{
+	width:900px;
+	height:600px;
+	margin:auto;
+	padding-top:100px;
+
+}
+.info{
+	display:block;
+	width:853px;
+}
+.play {
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-left: 12px solid #000;
+    border-bottom: 8px solid transparent;
+}
+
 </style>
 </head>
 <body>
 
-<input id="yarnlist" />
-<br>
-<br>
+<div id="holder">
+	<span class="info">Paste the URL of the yarns you want to add anywhere on the page. Drag the urls below the video to order them, click remove to remove.</span>
+	<br>
+	<input id="yarnlist" />
+	<br>
+	<br>
 
-<div id="videos"></div>
-<br>
-<button id="unroll">Unroll the yarn!</button>
-<br><br>
+	<div id="videos"></div>
+	<br>
+	<button id="unroll">Unroll the yarn!</button>
+	<br><br>
 
-<ul id="yarns"></ul>
-<br>
-
+	<ul id="yarns"></ul>
+	<br>
+</div>
 </body>
 </html>

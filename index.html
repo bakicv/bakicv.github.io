@@ -1,73 +1,7 @@
 <html>
 	<head>
-		<title>Inventory Test</title>
-		<script src='https://cdn.rawgit.com/naptha/tesseract.js/1.0.10/dist/tesseract.js'></script>
-		<script src='https://cdnjs.cloudflare.com/ajax/libs/reqwest/2.0.5/reqwest.js'></script>
-
-		<script>
-			function google_search(text){
-				reqwest({
-					url:"https://www.googleapis.com/customsearch/v1",
-					method:"GET",
-					data: {
-						key: "AIzaSyCn1Xy72_ZZaKEAEMWvbkuv7hLQJ_pOgAU",
-						cx: "011491840218073104795:fdi81trmpvo",
-						q:text
-					}
-				})
-				.then(function(result){
-					result.items.forEach(function(item){
-						var found = false
-						item.pagemap.product.forEach(function(product){
-							if (product.mpn && product.sku && product.name){
-								document.getElementById("name").value = product.name
-								document.getElementById("mpn").value = product.mpn
-								document.getElementById("sku").value = product.sku
-								found = true
-								return
-							}
-						})
-						if (found)
-							return
-					})
-				})
-				
-			}
-			function ocr(files){
-				var file = files[0];
-				document.getElementById("result").value = "Tracing..."
-				var reader  = new FileReader();
-				reader.onloadend = function () {
-					document.getElementById('image').src = reader.result
-					Tesseract.recognize(reader.result)
-					    .progress(message => console.log(message))
-					    .catch(err => console.error(err))
-					    .then(function(result){
-					    	console.log(result)
-					    	document.getElementById("result").value = result.text
-					    	google_search(result.text)
-					    	})
-					    .finally(resultOrError => console.log(resultOrError))
-				}
-				reader.readAsDataURL(file);
-				
-
-			}
-		</script>
+		<title></title>
 	</head>
 	<body>
-		<input type="file" accept="image/*" capture onchange="ocr(this.files)">
-		<br/>
-		<img id="image" src="" width="400" />
-		<br/>
-		<textarea id="result" style="width:394px;height:100px"></textarea>
-
-		<br/>
-		<br/>
-		<input id="name" />
-		<br/>
-		<input id="mpn" />
-		<br/>
-		<input id="sku" />
 	</body>
 </html>
